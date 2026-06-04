@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --primary: #ec4899;
+  --secondary: #a855f7;
+  --accent: #f43f5e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: radial-gradient(circle at 50% 0%, #1e112a 0%, #09090b 70%);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), sans-serif;
+  min-height: 100vh;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary);
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.3);
+  outline: none;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-btn {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%);
+  transition: all 0.3s ease;
+}
+
+.gradient-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(236, 72, 153, 0.4);
+}

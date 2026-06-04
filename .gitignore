@@ -1,0 +1,67 @@
+# Environment Files
+.env
+.env.local
+.env.production
+.env.development
+.env.*
+
+# Dependencies and Package Folders
+node_modules/
+vendor/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Next.js Build Output and Cache
+.next/
+out/
+build/
+dist/
+
+# Composer and PHP
+composer.phar
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+.vagrant/
+.compare/
+
+# Laravel Storage and Logs
+/apps/backend/storage/*.key
+/apps/backend/storage/app/public/zips/*
+/apps/backend/storage/app/zips_temp/*
+/apps/backend/storage/logs/*
+/apps/backend/storage/framework/cache/data/*
+/apps/backend/storage/framework/sessions/*
+/apps/backend/storage/framework/views/*
+/apps/backend/storage/framework/testing/*
+/backend/storage/*.key
+/backend/storage/app/public/zips/*
+/backend/storage/app/zips_temp/*
+/backend/storage/logs/*
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/framework/testing/*
+
+# Playwright Cache and Headless Browsers
+.cache/
+/apps/scraper/.cache/
+/scraper/.cache/
+
+# Local Dev / IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
