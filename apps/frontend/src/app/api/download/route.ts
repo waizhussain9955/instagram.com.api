@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import instagramUrlDirect from "instagram-url-direct";
+const { instagramGetUrl } = instagramUrlDirect;
 
 export async function POST(request: Request) {
   try {
@@ -7,22 +9,15 @@ export async function POST(request: Request) {
 
     // Validate inputs
     let targetUrl = "";
-    let shortcode = "";
     if (type === "single") {
       if (!url || !url.startsWith("http")) {
         return NextResponse.json({ error: "Invalid Instagram URL format" }, { status: 400 });
       }
       targetUrl = url;
-      // Extract shortcode
-      const match = url.match(/(?:instagram\.com\/(?:p|reel|tv|stories)\/)([a-zA-Z0-9_\-]+)/i);
-      if (match) {
-        shortcode = match[1];
-      }
     } else if (type === "stories") {
       if (!username) {
         return NextResponse.json({ error: "Username is required" }, { status: 400 });
       }
-      // Construct a public story URL or handle direct link
       targetUrl = username.startsWith("http") 
         ? username 
         : `https://www.instagram.com/stories/${username}/`;
@@ -37,23 +32,59 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unsupported download type" }, { status: 400 });
     }
 
-    // Load credentials from environment
+    // Handle single downloads keylessly using the instagram-url-direct scraper
+    if (type === "single") {
+      try {
+        const result = await instagramGetUrl(targetUrl);
+        if (!result || !result.url_list || result.url_list.length === 0) {
+          return NextResponse.json({ error: "No media resolved from this post. Make sure it is public." }, { status: 422 });
+        }
+
+        const mediaItems = (result.media_details || []).map((m: any) => ({
+          url: m.url || "",
+          type: m.type === "video" ? "video" : "image"
+        })).filter((item: any) => item.url !== "");
+
+        // Fallback to url_list if media_details format fails
+        if (mediaItems.length === 0 && result.url_list && result.url_list.length > 0) {
+          result.url_list.forEach((u: string, idx: number) => {
+            mediaItems.push({
+              url: u,
+              type: u.includes(".mp4") ? "video" : "image"
+            });
+          });
+        }
+
+        const caption = result.post_info?.caption || "";
+        const owner = result.post_info?.owner_username || "instagram_user";
+
+        return NextResponse.json({
+          success: true,
+          owner,
+          caption,
+          media_type: mediaItems.length > 1 ? "carousel" : mediaItems[0]?.type || "video",
+          media: mediaItems
+        });
+      } catch (err: any) {
+        return NextResponse.json({ error: `Keyless Downloader failed: ${err.message || err}` }, { status: 422 });
+      }
+    }
+
+    // Stories and Bulk Profile Scraper require RapidAPI due to Instagram session constraints
     const apiKey = process.env.RAPIDAPI_KEY || process.env.NEXT_PUBLIC_API_KEY;
     const apiHost = process.env.RAPIDAPI_HOST || "social-media-video-downloader.p.rapidapi.com";
 
-    if (!apiKey) {
-      return NextResponse.json({ error: "API Key configuration missing on server" }, { status: 500 });
+    if (!apiKey || apiKey.startsWith("wp_instasave_rapidapi_key_demo")) {
+      return NextResponse.json({ 
+        error: "Stories & Bulk profile downloads require a valid RapidAPI Key configured in environment variables." 
+      }, { status: 401 });
     }
 
-    // Call RapidAPI with 30s timeout protection
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    let apiEndpoint = `https://${apiHost}/instagram?url=${encodeURIComponent(targetUrl)}`;
-
-    if (type === "single" && shortcode) {
-      apiEndpoint = `https://${apiHost}/instagram/v3/media/post/details?renderableFormats=720p%2Chighres&shortcode=${shortcode}`;
-    } else if (type === "stories") {
+    let apiEndpoint = "";
+    if (type === "stories") {
       apiEndpoint = `https://${apiHost}/instagram/v3/stories?username=${username || ""}`;
     } else if (type === "bulk-fetch") {
       apiEndpoint = `https://${apiHost}/instagram/v3/user/posts?username=${username || ""}`;
@@ -73,22 +104,17 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       return NextResponse.json({ 
-        error: `Third-party API returned status ${response.status}: ${errorText || "Unknown error"}` 
+        error: `Hosted Scraper returned status ${response.status}: ${errorText || "Unknown error"}` 
       }, { status: 502 });
     }
 
     const data = await response.json();
 
-    // Map third-party response format to frontend expected schemas
-    // Standard RapidAPI shapes often include 'success' and 'media' or 'result' fields
     const success = 
       data.success || 
       data.status === "success" || 
       Array.isArray(data.media) || 
       Array.isArray(data.result) || 
-      data.video_url || 
-      data.display_url || 
-      data.image_url || 
       data.data ||
       (data.stories && Array.isArray(data.stories)) ||
       (data.posts && Array.isArray(data.posts));
@@ -109,7 +135,6 @@ export async function POST(request: Request) {
       : [];
 
     if (mediaItems.length === 0) {
-      // Fallback for single item responses (direct properties on 'data' or nested in 'data.data')
       const targetObj = data.data || data;
       const singleUrl = targetObj.video_url || targetObj.display_url || targetObj.image_url || targetObj.url || targetObj.downloadUrl || targetObj.download_url;
       if (singleUrl) {
@@ -124,28 +149,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No downloadable media items found in the response" }, { status: 422 });
     }
 
-    const caption = data.caption || data.title || data.data?.title || data.data?.caption || "";
-    const owner = data.owner || data.username || username || data.data?.owner?.username || "instagram_user";
-
-    // Format final response based on request type
-    if (type === "single") {
-      return NextResponse.json({
-        success: true,
-        owner,
-        caption,
-        media_type: mediaItems.length > 1 ? "carousel" : mediaItems[0].type,
-        media: mediaItems
-      });
-    } else if (type === "stories") {
-      // Map stories format
-      const stories = mediaItems.map((item, idx) => ({
+    if (type === "stories") {
+      const stories = mediaItems.map((item) => ({
         url: item.url,
         type: item.type,
-        preview: item.url // Use same URL as preview for simplicity
+        preview: item.url
       }));
       return NextResponse.json({ stories });
     } else if (type === "bulk-fetch") {
-      // Map bulk-fetch format
       const posts = mediaItems.slice(0, limit || 10).map((item, idx) => ({
         id: `post_${idx}_${Date.now()}`,
         url: item.url,
