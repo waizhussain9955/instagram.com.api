@@ -46,7 +46,7 @@ jQuery(document).ready(function($) {
         posts.forEach(function(post) {
             var isSel = selected.includes(post.id);
             var activeClass = isSel ? 'selected' : '';
-            var previewUrl = get_api_base_url() + '/api/v1/download/proxy?url=' + encodeURIComponent(post.preview);
+            var previewUrl = get_api_base_url() + '/api/proxy?url=' + encodeURIComponent(post.preview);
             gridHtml += '<div class="insta-grid-item ' + activeClass + '" data-id="' + post.id + '">';
             gridHtml += '<img src="' + previewUrl + '" alt="Insta Post">';
             gridHtml += '<div class="insta-checkbox-marker"></div>';
@@ -86,40 +86,63 @@ jQuery(document).ready(function($) {
         $('#insta-download-selected').prop('disabled', selected.length === 0);
     }
 
-    $('#insta-download-selected').on('click', function(e) {
+    $('#insta-download-selected').on('click', async function(e) {
         e.preventDefault();
         if (selected.length === 0) return;
 
         $('#insta-bulk-error').hide();
-        $('#insta-bulk-loader').text('Generating ZIP packages...').show();
+        $('#insta-bulk-loader').text('Generating ZIP package locally... (0/' + selected.length + ')').show();
 
-        var selectedMedia = posts.filter(function(p) {
-            return selected.includes(p.id);
-        }).map(function(p) {
-            return { id: p.id, url: p.url, type: p.type };
-        });
+        try {
+            var zip = new JSZip();
+            var selectedMedia = posts.filter(function(p) {
+                return selected.includes(p.id);
+            });
 
-        $.ajax({
-            url: insta_bulk_ajax.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'insta_bulk_zip',
-                username: username,
-                media: selectedMedia
-            },
-            success: function(response) {
-                $('#insta-bulk-loader').hide();
-                if (response.success && response.data.zip_url) {
-                    window.location.href = response.data.zip_url;
-                } else {
-                    $('#insta-bulk-error').text('Failed to compile ZIP file.').show();
+            for (var i = 0; i < selectedMedia.length; i++) {
+                $('#insta-bulk-loader').text('Downloading media item ' + (i + 1) + ' of ' + selectedMedia.length + '...');
+                var item = selectedMedia[i];
+                var proxyUrl = get_api_base_url() + '/api/proxy?url=' + encodeURIComponent(item.url);
+                
+                var response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch media item ' + (i + 1));
                 }
-            },
-            error: function() {
-                $('#insta-bulk-loader').hide();
-                $('#insta-bulk-error').text('AJAX compilation request error.').show();
+                
+                var blob = await response.blob();
+                
+                // Determine file extension
+                var contentType = response.headers.get("Content-Type") || "";
+                var extension = "jpg";
+                if (contentType.includes("video/mp4") || item.type === "video") {
+                    extension = "mp4";
+                } else if (contentType.includes("image/png")) {
+                    extension = "png";
+                } else if (contentType.includes("image/webp")) {
+                    extension = "webp";
+                }
+                
+                var filename = 'media_' + (i + 1) + '.' + extension;
+                zip.file(filename, blob);
             }
-        });
+
+            $('#insta-bulk-loader').text('Compiling ZIP archive...');
+            var zipBlob = await zip.generateAsync({ type: 'blob' });
+            
+            var downloadUrl = URL.createObjectURL(zipBlob);
+            var link = document.createElement("a");
+            link.href = downloadUrl;
+            link.download = username + '_downloads_' + Date.now() + '.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(downloadUrl);
+
+            $('#insta-bulk-loader').hide();
+        } catch (err) {
+            $('#insta-bulk-loader').hide();
+            $('#insta-bulk-error').text('ZIP compilation failed: ' + (err.message || err)).show();
+        }
     });
 
     function get_api_base_url() {

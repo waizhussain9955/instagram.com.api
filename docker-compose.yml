@@ -10,42 +10,8 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - RAPIDAPI_HOST=${RAPIDAPI_HOST}
+      - NEXT_PUBLIC_API_KEY=${NEXT_PUBLIC_API_KEY}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     restart: always
-    depends_on:
-      - backend
-
-  # Laravel API Backend
-  backend:
-    build:
-      context: ./apps/backend
-      dockerfile: Dockerfile
-    ports:
-      - "8000:80"
-    environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - APP_URL=http://localhost:8000
-      - SCRAPER_SERVICE_URL=http://scraper:8080
-      - CACHE_STORE=file
-    volumes:
-      - backend_storage:/var/www/html/storage
-    restart: always
-    depends_on:
-      - scraper
-
-  # Python FastAPI Scraper
-  scraper:
-    build:
-      context: ./apps/scraper
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - DEBUG=false
-      - INSTAGRAM_SESSION_ID=${INSTAGRAM_SESSION_ID}
-      - PROXY_URL=${PROXY_URL}
-    restart: always
-
-volumes:
-  backend_storage:

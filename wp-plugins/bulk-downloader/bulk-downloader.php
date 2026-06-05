@@ -48,7 +48,7 @@ class InstaBulkDownloader {
                 <table class="form-table">
                     <tr valign="top">
                         <th scope="row">InstaSave Backend API URL</th>
-                        <td><input type="text" name="insta_bulk_api_url" value="<?php echo esc_attr(get_option('insta_bulk_api_url', 'http://localhost:8000')); ?>" class="regular-text" /></td>
+                        <td><input type="text" name="insta_bulk_api_url" value="<?php echo esc_attr(get_option('insta_bulk_api_url', 'http://localhost:3000')); ?>" class="regular-text" /></td>
                     </tr>
                     <tr valign="top">
                         <th scope="row">API Authentication Key</th>
@@ -95,10 +95,11 @@ class InstaBulkDownloader {
 
     public function enqueue_assets() {
         wp_enqueue_style('insta-bulk-style', plugin_dir_url(__FILE__) . 'assets/css/style.css', array(), '1.0.0');
-        wp_enqueue_script('insta-bulk-script', plugin_dir_url(__FILE__) . 'assets/js/script.js', array('jquery'), '1.0.0', true);
+        wp_enqueue_script('jszip', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', array(), '3.10.1', true);
+        wp_enqueue_script('insta-bulk-script', plugin_dir_url(__FILE__) . 'assets/js/script.js', array('jquery', 'jszip'), '1.0.0', true);
         wp_localize_script('insta-bulk-script', 'insta_bulk_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'api_url'  => get_option('insta_bulk_api_url', 'http://localhost:8000')
+            'api_url'  => get_option('insta_bulk_api_url', 'http://localhost:3000')
         ));
     }
 
@@ -129,7 +130,7 @@ class InstaBulkDownloader {
             wp_send_json_error(array('message' => 'Username is required.'));
         }
 
-        $api_url = get_option('insta_bulk_api_url', 'http://localhost:8000') . '/api/v1/plugin/download/bulk-fetch';
+        $api_url = get_option('insta_bulk_api_url', 'http://localhost:3000') . '/api/download';
         $api_key = get_option('insta_bulk_api_key');
 
         $response = wp_remote_post($api_url, array(
@@ -137,7 +138,11 @@ class InstaBulkDownloader {
                 'Content-Type' => 'application/json',
                 'X-API-Key'    => $api_key
             ),
-            'body' => json_encode(array('username' => $username, 'limit' => $limit)),
+            'body' => json_encode(array(
+                'type'     => 'bulk-fetch',
+                'username' => $username,
+                'limit'    => $limit
+            )),
             'timeout' => 45
         ));
 

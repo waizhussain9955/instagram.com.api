@@ -47,8 +47,8 @@ function SingleDownloaderContent() {
     setResult(null);
 
     try {
-      // Laravel backend url is configured locally or via environment variables
-      const response = await axios.post(`${API_BASE_URL}/api/v1/download/single`, {
+      const response = await axios.post(`${API_BASE_URL}/api/download`, {
+        type: "single",
         url: targetUrl
       });
       setResult(response.data);
@@ -108,7 +108,7 @@ function SingleDownloaderContent() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-          <p className="text-zinc-400 text-sm">Bypassing Instagram limits & extracting media...</p>
+          <p className="text-zinc-400 text-sm">Extracting media details from hosted API...</p>
         </div>
       )}
 
@@ -124,19 +124,22 @@ function SingleDownloaderContent() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {result.media.map((item, idx) => (
-              <div key={idx} className="glass-panel rounded-xl overflow-hidden group">
+              <div key={idx} className="glass-panel rounded-xl overflow-hidden group relative">
                 <div className="aspect-square bg-black/40 relative flex items-center justify-center">
+                  <div className="absolute top-3 left-3 bg-black/75 px-2 py-0.5 rounded text-[10px] uppercase font-bold text-pink-500 tracking-wide z-10">
+                    HD Quality
+                  </div>
                   {item.type === "video" ? (
                     <video controls className="w-full h-full object-cover">
-                      <source src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`} type="video/mp4" />
+                      <source src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`} type="video/mp4" />
                     </video>
                   ) : (
-                    <img src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`} alt="Instagram Media" className="w-full h-full object-cover" />
+                    <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`} alt="Instagram Media" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className="p-4 border-t border-white/5">
                   <a
-                    href={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`}
+                    href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(item.url)}`}
                     download
                     className="w-full gradient-btn text-white font-semibold rounded-lg py-2.5 text-xs flex items-center justify-center space-x-2"
                   >

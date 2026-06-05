@@ -46,7 +46,7 @@ class InstaSingleDownloader {
                 <table class="form-table">
                     <tr valign="top">
                         <th scope="row">InstaSave Backend API URL</th>
-                        <td><input type="text" name="insta_api_url" value="<?php echo esc_attr(get_option('insta_api_url', 'http://localhost:8000')); ?>" class="regular-text" /></td>
+                        <td><input type="text" name="insta_api_url" value="<?php echo esc_attr(get_option('insta_api_url', 'http://localhost:3000')); ?>" class="regular-text" /></td>
                     </tr>
                     <tr valign="top">
                         <th scope="row">API Authentication Key</th>
@@ -81,7 +81,7 @@ class InstaSingleDownloader {
         wp_enqueue_script('insta-single-script', plugin_dir_url(__FILE__) . 'assets/js/script.js', array('jquery'), '1.0.0', true);
         wp_localize_script('insta-single-script', 'insta_single_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'api_url'  => get_option('insta_api_url', 'http://localhost:8000')
+            'api_url'  => get_option('insta_api_url', 'http://localhost:3000')
         ));
     }
 
@@ -110,7 +110,7 @@ class InstaSingleDownloader {
             wp_send_json_error(array('message' => 'Instagram URL is required.'));
         }
 
-        $api_url = get_option('insta_api_url', 'http://localhost:8000') . '/api/v1/plugin/download/single';
+        $api_url = get_option('insta_api_url', 'http://localhost:3000') . '/api/download';
         $api_key = get_option('insta_api_key');
 
         $response = wp_remote_post($api_url, array(
@@ -118,7 +118,10 @@ class InstaSingleDownloader {
                 'Content-Type' => 'application/json',
                 'X-API-Key'    => $api_key
             ),
-            'body' => json_encode(array('url' => $url)),
+            'body' => json_encode(array(
+                'type' => 'single',
+                'url'  => $url
+            )),
             'timeout' => 45
         ));
 

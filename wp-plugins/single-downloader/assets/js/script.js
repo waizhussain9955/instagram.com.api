@@ -33,7 +33,7 @@ jQuery(document).ready(function($) {
                         }
                         html += '</div>';
                         // Proxy download url
-                        var proxyUrl = get_api_base_url() + '/api/v1/download/proxy?url=' + encodeURIComponent(item.url);
+                        var proxyUrl = get_api_base_url() + '/api/proxy?url=' + encodeURIComponent(item.url);
                         html += '<a href="' + proxyUrl + '" class="insta-dl-btn" download>Download Media</a>';
                         html += '</div>';
                     });

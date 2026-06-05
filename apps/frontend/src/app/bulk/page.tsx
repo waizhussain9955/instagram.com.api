@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, Library, CheckSquare, Square } from "lucide-react";
 import { API_BASE_URL } from "../config";
+import JSZip from "jszip";
 
 interface ProfilePost {
   id: string;
@@ -39,7 +40,8 @@ export default function BulkDownloader() {
     setSelected([]);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/v1/download/bulk-fetch`, {
+      const response = await axios.post(`${API_BASE_URL}/api/download`, {
+        type: "bulk-fetch",
         username: targetUsername,
         limit
       });
@@ -81,22 +83,52 @@ export default function BulkDownloader() {
       }
     }
 
-    const selectedPosts = posts.filter(p => selected.includes(p.id));
-
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/v1/download/zip`, {
-        username: targetUsername,
-        media: selectedPosts.map(p => ({ id: p.id, url: p.url, type: p.type }))
-      });
+      const zip = new JSZip();
+      const selectedPosts = posts.filter(p => selected.includes(p.id));
 
-      // Redirect or initiate ZIP download
-      if (response.data.zip_url) {
-        window.location.href = response.data.zip_url;
-      } else {
-        throw new Error("Zip creation failed");
+      // Fetch each selected media file via proxy and add to zip
+      for (let i = 0; i < selectedPosts.length; i++) {
+        const item = selectedPosts[i];
+        const proxyUrl = `/api/proxy?url=${encodeURIComponent(item.url)}`;
+        
+        const response = await fetch(proxyUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch media file ${i + 1}`);
+        }
+        
+        const blob = await response.blob();
+        
+        // Determine file extension from Content-Type or fallbacks
+        const contentType = response.headers.get("Content-Type") || "";
+        let extension = "jpg";
+        if (contentType.includes("video/mp4") || item.type === "video") {
+          extension = "mp4";
+        } else if (contentType.includes("image/png")) {
+          extension = "png";
+        } else if (contentType.includes("image/webp")) {
+          extension = "webp";
+        }
+        
+        const filename = `media_${i + 1}.${extension}`;
+        zip.file(filename, blob);
       }
+
+      // Generate the zip file
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      
+      // Trigger browser download
+      const downloadUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${targetUsername}_downloads_${Date.now()}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
     } catch (err: any) {
-      setError("Failed to generate ZIP package. Try choosing fewer files.");
+      setError(`Failed to generate ZIP package locally: ${err.message || err}`);
     } finally {
       setZipping(false);
     }
@@ -214,7 +246,10 @@ export default function BulkDownloader() {
                     isSel ? "border-primary" : "border-transparent"
                   }`}
                 >
-                  <img src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(post.preview)}`} alt="Instagram Media" className="w-full h-full object-cover" />
+                  <div className="absolute top-2 left-2 bg-black/75 px-1.5 py-0.5 rounded text-[8px] uppercase font-bold text-pink-500 tracking-wide z-10">
+                    HD
+                  </div>
+                  <img src={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(post.preview)}`} alt="Instagram Media" className="w-full h-full object-cover" />
                   <div className="absolute top-2 right-2 p-1 bg-black/60 rounded-md">
                     {isSel ? (
                       <CheckSquare className="h-4 w-4 text-primary" />
