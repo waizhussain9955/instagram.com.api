@@ -10,7 +10,7 @@ RUN composer install \
     --prefer-dist
 
 # Stage 2: Production runtime environment
-FROM php:8.2-apache AS runner
+FROM php:8.4-apache AS runner
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
