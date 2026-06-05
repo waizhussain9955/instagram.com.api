@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { Loader2, Calendar, User, ArrowRight } from "lucide-react";
+import { API_BASE_URL } from "../config";
 
 interface BlogPost {
   id: string;
@@ -24,7 +25,7 @@ export default function BlogList() {
   useEffect(() => {
     async function fetchPosts() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/v1/blog");
+        const response = await axios.get(`${API_BASE_URL}/api/v1/blog`);
         setPosts(response.data.posts || []);
       } catch (err) {
         // Fallback demo posts if backend is unseeded/inactive

@@ -1,0 +1,20 @@
+# fly.scraper.toml
+# Deploy using: fly deploy -c fly.scraper.toml
+
+app = "instagram-scraper-api"
+primary_region = "ewr"
+
+[build]
+  dockerfile = "apps/scraper/Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb" # Playwright requires at least 1GB memory for stable operations

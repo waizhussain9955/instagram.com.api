@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, Sparkles, RefreshCw } from "lucide-react";
+import { API_BASE_URL } from "../config";
 
 interface MediaItem {
   url: string;
@@ -47,7 +48,7 @@ function SingleDownloaderContent() {
 
     try {
       // Laravel backend url is configured locally or via environment variables
-      const response = await axios.post("http://127.0.0.1:8000/api/v1/download/single", {
+      const response = await axios.post(`${API_BASE_URL}/api/v1/download/single`, {
         url: targetUrl
       });
       setResult(response.data);
@@ -127,15 +128,15 @@ function SingleDownloaderContent() {
                 <div className="aspect-square bg-black/40 relative flex items-center justify-center">
                   {item.type === "video" ? (
                     <video controls className="w-full h-full object-cover">
-                      <source src={`http://127.0.0.1:8000/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`} type="video/mp4" />
+                      <source src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`} type="video/mp4" />
                     </video>
                   ) : (
-                    <img src={`http://127.0.0.1:8000/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`} alt="Instagram Media" className="w-full h-full object-cover" />
+                    <img src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`} alt="Instagram Media" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className="p-4 border-t border-white/5">
                   <a
-                    href={`http://127.0.0.1:8000/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`}
+                    href={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(item.url)}`}
                     download
                     className="w-full gradient-btn text-white font-semibold rounded-lg py-2.5 text-xs flex items-center justify-center space-x-2"
                   >

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Loader2, Calendar, User, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { API_BASE_URL } from "../../config";
 
 interface BlogPost {
   title: string;
@@ -25,7 +26,7 @@ export default function BlogDetails() {
   useEffect(() => {
     async function fetchPost() {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/api/v1/blog/${params.slug}`);
+        const response = await axios.get(`${API_BASE_URL}/api/v1/blog/${params.slug}`);
         setPost(response.data.post);
       } catch (err) {
         // Fallback demo matching the selected slug

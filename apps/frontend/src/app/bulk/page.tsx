@@ -3,6 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, Library, CheckSquare, Square } from "lucide-react";
+import { API_BASE_URL } from "../config";
 
 interface ProfilePost {
   id: string;
@@ -38,7 +39,7 @@ export default function BulkDownloader() {
     setSelected([]);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/v1/download/bulk-fetch", {
+      const response = await axios.post(`${API_BASE_URL}/api/v1/download/bulk-fetch`, {
         username: targetUsername,
         limit
       });
@@ -83,7 +84,7 @@ export default function BulkDownloader() {
     const selectedPosts = posts.filter(p => selected.includes(p.id));
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/v1/download/zip", {
+      const response = await axios.post(`${API_BASE_URL}/api/v1/download/zip`, {
         username: targetUsername,
         media: selectedPosts.map(p => ({ id: p.id, url: p.url, type: p.type }))
       });
@@ -213,7 +214,7 @@ export default function BulkDownloader() {
                     isSel ? "border-primary" : "border-transparent"
                   }`}
                 >
-                  <img src={`http://127.0.0.1:8000/api/v1/download/proxy?url=${encodeURIComponent(post.preview)}`} alt="Instagram Media" className="w-full h-full object-cover" />
+                  <img src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(post.preview)}`} alt="Instagram Media" className="w-full h-full object-cover" />
                   <div className="absolute top-2 right-2 p-1 bg-black/60 rounded-md">
                     {isSel ? (
                       <CheckSquare className="h-4 w-4 text-primary" />

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Download, AlertCircle, Loader2, PlayCircle, Eye } from "lucide-react";
+import { API_BASE_URL } from "../config";
 
 interface StoryItem {
   url: string;
@@ -33,7 +34,7 @@ export default function StoryDownloader() {
     setStories([]);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/v1/download/stories", {
+      const response = await axios.post(`${API_BASE_URL}/api/v1/download/stories`, {
         username: targetUsername
       });
       setStories(response.data.stories || []);
@@ -110,15 +111,15 @@ export default function StoryDownloader() {
                 <div className="aspect-[9/16] bg-black/40 relative flex items-center justify-center">
                   {story.type === "video" ? (
                     <video controls className="w-full h-full object-cover">
-                      <source src={`http://127.0.0.1:8000/api/v1/download/proxy?url=${encodeURIComponent(story.url)}`} type="video/mp4" />
+                      <source src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(story.url)}`} type="video/mp4" />
                     </video>
                   ) : (
-                    <img src={`http://127.0.0.1:8000/api/v1/download/proxy?url=${encodeURIComponent(story.url)}`} alt="Story content" className="w-full h-full object-cover" />
+                    <img src={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(story.url)}`} alt="Story content" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className="p-3 border-t border-white/5 bg-zinc-900/60 backdrop-blur-sm">
                   <a
-                    href={`http://127.0.0.1:8000/api/v1/download/proxy?url=${encodeURIComponent(story.url)}`}
+                    href={`${API_BASE_URL}/api/v1/download/proxy?url=${encodeURIComponent(story.url)}`}
                     download
                     className="w-full gradient-btn text-white font-semibold rounded-lg py-2 text-xs flex items-center justify-center space-x-1.5"
                   >
